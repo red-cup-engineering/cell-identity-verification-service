@@ -15,10 +15,7 @@ export const CELL_FACES = Object.freeze([
 ]);
 
 export const CELL_PROFILES = Object.freeze({
-  capcell: Object.freeze([]),
-  "federated-capcell": Object.freeze(["activitypub"]),
-  "state-cell": Object.freeze(["evm"]),
-  "union-capcell": Object.freeze(["activitypub", "evm"]),
+  capcell: Object.freeze(["activitypub", "evm"]),
 });
 
 const NI = /^ni:\/\/\/sha-256;[A-Za-z0-9_-]{43}$/u;
@@ -41,8 +38,11 @@ function object(value, label) {
 
 export function normalizeCellManifest(source) {
   const manifest = object(source, "manifest");
-  if (manifest.type !== "CapabilityCellManifest" || manifest.version !== 1) {
-    throw new CellIdentityVerificationError("manifest must use CapabilityCellManifest version 1");
+  if (manifest.type !== "CapabilityCellManifest" || manifest.version !== 2) {
+    throw new CellIdentityVerificationError("manifest must use CapabilityCellManifest version 2");
+  }
+  if (typeof manifest.sku !== "string" || !NI.test(manifest.sku)) {
+    throw new CellIdentityVerificationError("manifest sku must be one canonical RMN StockKeepingUnit identity");
   }
   if (typeof manifest.capability !== "string" || !NI.test(manifest.capability)) {
     throw new CellIdentityVerificationError("manifest capability must be one SHA-256 ni URI");
@@ -62,10 +62,29 @@ export function normalizeCellManifest(source) {
   );
   return Object.freeze({
     type: "CapabilityCellManifest",
-    version: 1,
+    version: 2,
+    sku: manifest.sku,
     capability: manifest.capability,
     controller: manifest.controller,
     faces: Object.freeze(normalizedFaces),
+  });
+}
+
+export function identifyCellIdentity(source) {
+  const manifest = normalizeCellManifest(source);
+  const value = Object.freeze({
+    type: "CapabilityCellIdentity",
+    version: 1,
+    sku: manifest.sku,
+    capability: manifest.capability,
+    controller: manifest.controller,
+  });
+  const bytes = semanticBytes(value);
+  return Object.freeze({
+    id: semanticId(value),
+    mediaType: "application/rmn+cbor",
+    value: decodeSemantic(bytes),
+    bytes,
   });
 }
 
@@ -90,7 +109,7 @@ function invalid(face, claim, reason, evidence = undefined) {
   });
 }
 
-async function observeFace(face, claim, observer, identity, controller) {
+async function observeFace(face, claim, observer, cell, manifest, sku, capability, controller) {
   if (typeof observer !== "function") {
     return invalid(face, claim, "observer-unavailable");
   }
@@ -99,7 +118,10 @@ async function observeFace(face, claim, observer, identity, controller) {
     result = object(await observer(Object.freeze({
       face,
       claim,
-      manifest: identity,
+      cell,
+      manifest,
+      sku,
+      capability,
       controller,
     })), `${face} observer result`);
   } catch (error) {
@@ -108,7 +130,7 @@ async function observeFace(face, claim, observer, identity, controller) {
       message: error?.message ?? String(error),
     });
   }
-  if (result.manifest !== identity || result.controller !== controller) {
+  if (result.cell !== cell || result.controller !== controller) {
     return invalid(face, claim, "identity-mismatch", result.evidence);
   }
   return Object.freeze({
@@ -125,20 +147,33 @@ export async function verifyCellIdentity({ manifest, observers = {}, profile = "
     throw new CellIdentityVerificationError(`unsupported cell profile: ${profile}`);
   }
   object(observers, "observers");
-  const identity = identifyCellManifest(manifest);
+  const identity = identifyCellIdentity(manifest);
+  const manifestRecord = identifyCellManifest(manifest);
   const faces = [];
   for (const face of CELL_FACES) {
-    const claim = identity.value.faces[face];
+    const claim = manifestRecord.value.faces[face];
     faces.push(claim === undefined
       ? Object.freeze({ face, disposition: "absent" })
-      : await observeFace(face, claim, observers[face], identity.id, identity.value.controller));
+      : await observeFace(
+        face,
+        claim,
+        observers[face],
+        identity.id,
+        manifestRecord.id,
+        identity.value.sku,
+        identity.value.capability,
+        identity.value.controller,
+      ));
   }
   const byFace = Object.fromEntries(faces.map((result) => [result.face, result]));
   const missing = requiredFaces.filter((face) => byFace[face].disposition !== "bound");
   const value = Object.freeze({
     type: "CellIdentityVerification",
-    version: 1,
-    manifest: identity.id,
+    version: 2,
+    cell: identity.id,
+    manifest: manifestRecord.id,
+    sku: identity.value.sku,
+    capability: identity.value.capability,
     controller: identity.value.controller,
     profile,
     faces: Object.freeze(faces),

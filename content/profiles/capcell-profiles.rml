@@ -1,14 +1,12 @@
 #lang rmn/v2
 (map
   ("type" "CapabilityCellIdentityProfiles")
-  ("version" 1)
+  ("version" 2)
   ("profiles"
     (map
-      ("capcell" (list))
-      ("federated-capcell" (list "activitypub"))
-      ("state-cell" (list "evm"))
-      ("union-capcell" (list "activitypub" "evm"))))
+      ("capcell" (list "activitypub" "evm"))))
   ("faceDispositions" (list "bound" "absent" "invalid"))
   ("knowledgeCirculation" "activitypub")
   ("stateAndSettlementOrder" "evm")
+  ("partialObjects" "An AP-only, EVM-only, or locally carried service is an unrealized component or candidate, not a Capability Cell.")
   ("nonclaim" "EVM ordering does not by itself make a recorded assertion semantically true."))
