@@ -1,0 +1,16 @@
+{
+  "name": "@red-cup-engineering/cell-identity-verification-service",
+  "version": "0.1.0",
+  "private": false,
+  "type": "module",
+  "description": "Independently verifies that public capability-cell faces bind to one canonical RMN manifest identity, returning bound, absent, or invalid for every face.",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/red-cup-engineering/cell-identity-verification-service.git"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
+}
