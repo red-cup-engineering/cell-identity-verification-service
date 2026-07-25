@@ -4,6 +4,32 @@
   "private": false,
   "type": "module",
   "description": "Independently verifies that public capability-cell faces bind to one canonical RMN manifest identity, returning bound, absent, or invalid for every face.",
+  "exports": {
+    ".": {
+      "types": "./types/index.d.mts",
+      "import": "./src/verify-cell-identity.mjs"
+    }
+  },
+  "bin": {
+    "verify-cell-identity": "./bin/verify-cell-identity.mjs"
+  },
+  "files": [
+    "bin/",
+    "content/",
+    "src/",
+    "types/"
+  ],
+  "scripts": {
+    "check": "node --check src/verify-cell-identity.mjs && node --check bin/verify-cell-identity.mjs",
+    "test": "node --test test/*.test.mjs",
+    "verify": "npm run check && npm test && npm pack --dry-run"
+  },
+  "dependencies": {
+    "@emsenn/rmn-semantic-conformance-die": "https://github.com/emsenn/rmn-semantic-conformance-die/releases/download/v6.0.0/emsenn-rmn-semantic-conformance-die-6.0.0.tgz"
+  },
+  "engines": {
+    "node": ">=22"
+  },
   "license": "Apache-2.0",
   "repository": {
     "type": "git",

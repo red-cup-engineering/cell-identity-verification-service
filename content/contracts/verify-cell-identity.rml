@@ -1,0 +1,8 @@
+#lang rmn/v2
+(map
+  ("type" "CellIdentityVerificationLaw")
+  ("version" 1)
+  ("precondition" "Receive one canonical CapabilityCellManifest and one independently callable observer for any claimed face the caller can presently assay.")
+  ("operation" "Derive the manifest's RFC 6920 semantic identity; classify every standard face as bound, absent, or invalid; then apply one explicit CapCell, FederatedCapCell, StateCell, or UnionCapCell required-face profile.")
+  ("postcondition" "Return one canonical RMN verification relation naming the manifest identity, controller DID, profile, every face disposition and evidence, and the profile admission result.")
+  ("refusal" "Refuse malformed manifests, undeclared faces, unsupported profiles, and any observer result that does not bind the exact manifest identity and controller. A claimed but unobservable or mismatched face is invalid, never silently absent or bound."))
