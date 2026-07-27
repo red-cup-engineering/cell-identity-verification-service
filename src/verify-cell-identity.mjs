@@ -2,7 +2,7 @@ import {
   decodeSemantic,
   semanticBytes,
   semanticId,
-} from "@emsenn/rmn-semantic-conformance-die";
+} from "@lenticule-science/rmn-semantic-conformance-die";
 
 export const CELL_FACES = Object.freeze([
   "npm",
