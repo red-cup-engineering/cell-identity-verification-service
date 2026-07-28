@@ -4,20 +4,6 @@ import {
   semanticId,
 } from "@lenticule-science/rmn-semantic-conformance-die";
 
-export const CELL_FACES = Object.freeze([
-  "npm",
-  "github",
-  "activitypub",
-  "a2a",
-  "mcp",
-  "x402",
-  "evm",
-]);
-
-export const CELL_PROFILES = Object.freeze({
-  capcell: Object.freeze(["activitypub", "evm"]),
-});
-
 const NI = /^ni:\/\/\/sha-256;[A-Za-z0-9_-]{43}$/u;
 const EVM_DID = /^did:pkh:(eip155:\d+):(0x[0-9a-fA-F]{40})$/u;
 
@@ -51,14 +37,13 @@ export function normalizeCellManifest(source) {
     throw new CellIdentityVerificationError("manifest controller must be one did:pkh EVM account");
   }
   const faces = object(manifest.faces ?? {}, "manifest faces");
-  const unknown = Object.keys(faces).filter((face) => !CELL_FACES.includes(face));
-  if (unknown.length > 0) {
-    throw new CellIdentityVerificationError(`manifest contains unknown faces: ${unknown.join(", ")}`);
-  }
   const normalizedFaces = Object.fromEntries(
-    CELL_FACES
-      .filter((face) => Object.hasOwn(faces, face))
-      .map((face) => [face, object(faces[face], `manifest face ${face}`)]),
+    Object.keys(faces)
+      .sort()
+      .map((face) => {
+        if (face.length === 0) throw new CellIdentityVerificationError("manifest face names must be non-empty");
+        return [face, object(faces[face], `manifest face ${face}`)];
+      }),
   );
   return Object.freeze({
     type: "CapabilityCellManifest",
@@ -141,20 +126,20 @@ async function observeFace(face, claim, observer, cell, manifest, sku, capabilit
   });
 }
 
-export async function verifyCellIdentity({ manifest, observers = {}, profile = "capcell" }) {
-  const requiredFaces = CELL_PROFILES[profile];
-  if (requiredFaces === undefined) {
-    throw new CellIdentityVerificationError(`unsupported cell profile: ${profile}`);
+export async function verifyCellIdentity({ manifest, observers = {}, requiredFaces = [] }) {
+  if (!Array.isArray(requiredFaces) || requiredFaces.some((face) => typeof face !== "string" || face.length === 0)) {
+    throw new CellIdentityVerificationError("requiredFaces must be an array of non-empty face names");
+  }
+  if (new Set(requiredFaces).size !== requiredFaces.length) {
+    throw new CellIdentityVerificationError("requiredFaces must not repeat a face name");
   }
   object(observers, "observers");
   const identity = identifyCellIdentity(manifest);
   const manifestRecord = identifyCellManifest(manifest);
   const faces = [];
-  for (const face of CELL_FACES) {
+  for (const face of Object.keys(manifestRecord.value.faces)) {
     const claim = manifestRecord.value.faces[face];
-    faces.push(claim === undefined
-      ? Object.freeze({ face, disposition: "absent" })
-      : await observeFace(
+    faces.push(await observeFace(
         face,
         claim,
         observers[face],
@@ -166,7 +151,7 @@ export async function verifyCellIdentity({ manifest, observers = {}, profile = "
       ));
   }
   const byFace = Object.fromEntries(faces.map((result) => [result.face, result]));
-  const missing = requiredFaces.filter((face) => byFace[face].disposition !== "bound");
+  const missing = requiredFaces.filter((face) => byFace[face]?.disposition !== "bound");
   const value = Object.freeze({
     type: "CellIdentityVerification",
     version: 2,
@@ -175,7 +160,6 @@ export async function verifyCellIdentity({ manifest, observers = {}, profile = "
     sku: identity.value.sku,
     capability: identity.value.capability,
     controller: identity.value.controller,
-    profile,
     faces: Object.freeze(faces),
     profileDisposition: missing.length === 0 ? "admitted" : "refused",
     missingRequiredBindings: Object.freeze(missing),

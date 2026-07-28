@@ -1,6 +1,5 @@
-export type CellFace = "npm" | "github" | "activitypub" | "a2a" | "mcp" | "x402" | "evm";
-export type CellFaceDisposition = "bound" | "absent" | "invalid";
-export type CellProfile = "capcell";
+export type CellFace = string;
+export type CellFaceDisposition = "bound" | "invalid";
 
 export interface CapabilityCellManifest {
   type: "CapabilityCellManifest";
@@ -8,7 +7,7 @@ export interface CapabilityCellManifest {
   sku: `ni:///sha-256;${string}`;
   capability: `ni:///sha-256;${string}`;
   controller: `did:pkh:eip155:${string}:0x${string}`;
-  faces: Partial<Record<CellFace, Readonly<Record<string, unknown>>>>;
+  faces: Readonly<Record<CellFace, Readonly<Record<string, unknown>>>>;
 }
 
 export interface CellFaceBinding {
@@ -19,8 +18,6 @@ export interface CellFaceBinding {
   evidence?: unknown;
 }
 
-export declare const CELL_FACES: readonly CellFace[];
-export declare const CELL_PROFILES: Readonly<Record<CellProfile, readonly CellFace[]>>;
 export declare function normalizeCellManifest(source: unknown): CapabilityCellManifest;
 export declare function identifyCellIdentity(source: unknown): {
   id: `ni:///sha-256;${string}`;
@@ -42,7 +39,7 @@ export declare function identifyCellManifest(source: unknown): {
 };
 export declare function verifyCellIdentity(input: {
   manifest: CapabilityCellManifest;
-  profile?: CellProfile;
+  requiredFaces?: readonly CellFace[];
   observers?: Partial<Record<CellFace, (request: {
     face: CellFace;
     claim: Readonly<Record<string, unknown>>;
@@ -60,7 +57,6 @@ export declare function verifyCellIdentity(input: {
   sku: `ni:///sha-256;${string}`;
   capability: `ni:///sha-256;${string}`;
   controller: string;
-  profile: CellProfile;
   faces: readonly CellFaceBinding[];
   profileDisposition: "admitted" | "refused";
   missingRequiredBindings: readonly CellFace[];

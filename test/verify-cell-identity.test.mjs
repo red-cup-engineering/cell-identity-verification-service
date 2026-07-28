@@ -2,7 +2,6 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
-  CELL_FACES,
   identifyCellIdentity,
   identifyCellManifest,
   verifyCellIdentity,
@@ -16,16 +15,17 @@ function observer(evidence) {
   return ({ cell, controller: did }) => ({ cell, controller: did, evidence });
 }
 
-test("a CapCell is refused when its ActivityPub and EVM bindings are absent", async () => {
+test("declared requirements, rather than a manifest-declared face vocabulary, determine admission", async () => {
   const result = await verifyCellIdentity({
     manifest: { type: "CapabilityCellManifest", version: 2, sku, capability, controller, faces: {} },
+    requiredFaces: ["activitypub", "evm"],
   });
   assert.equal(result.profileDisposition, "refused");
-  assert.deepEqual(result.faces.map(({ disposition }) => disposition), CELL_FACES.map(() => "absent"));
+  assert.deepEqual(result.faces, []);
   assert.deepEqual(result.missingRequiredBindings, ["activitypub", "evm"]);
 });
 
-test("a CapCell requires bound ActivityPub and EVM but no other face", async () => {
+test("a cell may bind any declared protocol faces", async () => {
   const manifest = {
     type: "CapabilityCellManifest",
     version: 2,
@@ -35,19 +35,23 @@ test("a CapCell requires bound ActivityPub and EVM but no other face", async () 
     faces: {
       activitypub: { actor: "https://cell.example/actor" },
       evm: { account: "eip155:5615610:0x1111111111111111111111111111111111111111" },
+      "webtransport-v2": { endpoint: "https://cell.example/wt" },
     },
   };
   const result = await verifyCellIdentity({
     manifest,
+    requiredFaces: ["activitypub", "evm"],
     observers: {
       activitypub: observer({ signature: "activitypub-fixture" }),
       evm: observer({ erc1271: "fixture" }),
+      "webtransport-v2": observer({ session: "fixture" }),
     },
   });
   assert.equal(result.profileDisposition, "admitted");
-  assert.equal(result.faces.find(({ face }) => face === "npm").disposition, "absent");
+  assert.equal(result.faces.length, 3);
   assert.equal(result.faces.find(({ face }) => face === "activitypub").disposition, "bound");
   assert.equal(result.faces.find(({ face }) => face === "evm").disposition, "bound");
+  assert.equal(result.faces.find(({ face }) => face === "webtransport-v2").disposition, "bound");
 });
 
 test("a claimed face is invalid when its observer is absent, refuses, or binds another cell identity", async () => {
@@ -65,6 +69,7 @@ test("a claimed face is invalid when its observer is absent, refuses, or binds a
   };
   const result = await verifyCellIdentity({
     manifest,
+    requiredFaces: ["activitypub", "evm"],
     observers: {
       activitypub: async () => { throw new Error("signature failed"); },
       evm: ({ controller: did }) => ({
@@ -98,12 +103,16 @@ test("face address changes revise the manifest without mutating cell or SKU iden
   assert.notEqual(identifyCellManifest(first).id, identifyCellManifest(second).id);
 });
 
-test("partial-cell profiles are refused rather than weakening CapCell", async () => {
-  const manifest = { type: "CapabilityCellManifest", version: 2, sku, capability, controller, faces: {} };
-  for (const profile of ["federated-capcell", "state-cell", "union-capcell"]) {
-    await assert.rejects(
-      verifyCellIdentity({manifest, profile}),
-      /unsupported cell profile/u,
-    );
-  }
+test("face composition can evolve without a new verifier release", async () => {
+  const manifest = {
+    type: "CapabilityCellManifest", version: 2, sku, capability, controller,
+    faces: { "future-proof": { version: 1 } },
+  };
+  const result = await verifyCellIdentity({
+    manifest,
+    observers: { "future-proof": observer({ accepted: true }) },
+    requiredFaces: ["future-proof"],
+  });
+  assert.equal(result.profileDisposition, "admitted");
+  assert.deepEqual(result.missingRequiredBindings, []);
 });
