@@ -1,6 +1,6 @@
 {
   "name": "@red-cup-engineering/cell-identity-verification-service",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": false,
   "type": "module",
   "description": "Independently verifies that public capability-cell faces bind to one canonical RMN manifest identity, returning bound, absent, or invalid for every face.",
@@ -11,16 +11,16 @@
     }
   },
   "bin": {
-    "verify-cell-identity": "./bin/verify-cell-identity.mjs"
+    "verify-cell-identity": "./scripts/verify-cell-identity.mjs"
   },
   "files": [
-    "bin/",
+    "scripts/",
     "content/",
     "src/",
     "types/"
   ],
   "scripts": {
-    "check": "node --check src/verify-cell-identity.mjs && node --check bin/verify-cell-identity.mjs",
+    "check": "node --check src/verify-cell-identity.mjs && node --check scripts/verify-cell-identity.mjs",
     "test": "node --test test/*.test.mjs",
     "verify": "npm run check && npm test && npm pack --dry-run"
   },
