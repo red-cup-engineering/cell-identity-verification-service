@@ -1,8 +1,0 @@
-#lang rmn/v2
-(map
-  ("type" "CellIdentityVerificationLaw")
-  ("version" 2)
-  ("precondition" "Receive one canonical CapabilityCellManifest version 2 that names a canonical RMN StockKeepingUnit, capability law identity, controller, and claimed face addresses, plus one independently callable observer for any claimed face the caller can presently assay.")
-  ("operation" "Derive a stable RFC 6920 cell identity only from SKU, capability, and controller; separately identify the manifest revision carrying its presently declared mutable face addresses; classify each claimed face as bound or invalid; then evaluate only the caller's explicit, evolving required-face list.")
-  ("postcondition" "Return one canonical RMN verification relation naming the stable cell identity, manifest-revision identity, SKU, capability, controller DID, every declared face disposition and evidence, the explicit requirements, and the admission result. Changing, adding, or removing a face changes the manifest revision but never silently changes the cell or product identity.")
-  ("refusal" "Refuse malformed manifests, malformed or duplicate required-face names, or any observer result that does not bind the exact stable cell identity and controller. A claimed but unobservable or mismatched face is invalid, never silently bound."))

@@ -1,8 +1,0 @@
-#lang rmn/v2
-(map
-  ("type" "CapabilityCellIdentityProfiles")
-  ("version" 2)
-  ("profiles" "No profile closes a cell's face composition. A caller may state the face bindings required for its own decision, and those requirements are input to verification rather than a global ontology.")
-  ("faceDispositions" (list "bound" "invalid"))
-  ("evolution" "A manifest may introduce, retire, or revise named faces without a verifier vocabulary release.")
-  ("nonclaim" "EVM ordering does not by itself make a recorded assertion semantically true."))
