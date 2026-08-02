@@ -2,7 +2,7 @@ import {
   decodeSemantic,
   semanticBytes,
   semanticId,
-} from "@red-cup-engineering/rmn-semantic-conformance-die";
+} from "@red-cup-engineering/relation-model-notation-runtime";
 
 const NI = /^ni:\/\/\/sha-256;[A-Za-z0-9_-]{43}$/u;
 const EVM_DID = /^did:pkh:(eip155:\d+):(0x[0-9a-fA-F]{40})$/u;
