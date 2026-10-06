@@ -1,13 +1,17 @@
 {
   "name": "@red-cup-engineering/cell-identity-verification-service",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "private": false,
   "type": "module",
-  "description": "Independently verifies that public capability-cell faces bind to one canonical RMN manifest identity, returning bound, absent, or invalid for every face.",
+  "description": "Verifies capability-cell faces and actor-level protocol co-reference without collapsing historical, unresolved, revoked, or conflicting identities.",
   "exports": {
     ".": {
       "types": "./types/index.d.mts",
       "import": "./src/verify-cell-identity.mjs"
+    },
+    "./co-reference": {
+      "types": "./types/co-reference.d.mts",
+      "import": "./src/co-reference-witness.mjs"
     }
   },
   "bin": {
@@ -20,7 +24,7 @@
     "types/"
   ],
   "scripts": {
-    "check": "node --check src/verify-cell-identity.mjs && node --check scripts/verify-cell-identity.mjs",
+    "check": "node --check src/verify-cell-identity.mjs && node --check src/co-reference-witness.mjs && node --check scripts/verify-cell-identity.mjs && node --check test/verify-cell-identity.test.mjs && node --check test/co-reference-witness.test.mjs",
     "test": "node --test test/*.test.mjs",
     "verify": "npm run check && npm test && npm pack --dry-run"
   },
