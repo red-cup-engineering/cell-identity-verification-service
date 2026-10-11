@@ -29,7 +29,7 @@
     "verify": "npm run check && npm test && npm pack --dry-run"
   },
   "dependencies": {
-    "@red-cup-engineering/relation-model-notation-runtime": "7.0.0"
+    "@red-cup-engineering/relation-model-notation-runtime": "workspace:*"
   },
   "engines": {
     "node": ">=22"
