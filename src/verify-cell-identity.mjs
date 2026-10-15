@@ -1,8 +1,9 @@
 import {
   decodeSemantic,
-  semanticBytes,
-  semanticId,
-} from "@red-cup-engineering/relation-model-notation-runtime";
+  semanticAddress,
+} from "@red-cup-engineering/computer-content-address-engineering-services-section/semiotic-content-address";
+
+import { assertHistoricalIdentityData, assertOwnDataRecord, assertObserverRecord, observerRefusalEvidence } from "./historical-identity-admission.mjs";
 
 const NI = /^ni:\/\/\/sha-256;[A-Za-z0-9_-]{43}$/u;
 const EVM_DID = /^did:pkh:(eip155:\d+):(0x[0-9a-fA-F]{40})$/u;
@@ -16,13 +17,11 @@ export class CellIdentityVerificationError extends Error {
 }
 
 function object(value, label) {
-  if (value === null || typeof value !== "object" || Array.isArray(value)) {
-    throw new CellIdentityVerificationError(`${label} must be an object`);
-  }
-  return value;
+  return assertOwnDataRecord(value, label, CellIdentityVerificationError);
 }
 
 export function normalizeCellManifest(source) {
+  assertHistoricalIdentityData(source, "manifest", CellIdentityVerificationError, ["faces"]);
   const manifest = object(source, "manifest");
   if (manifest.type !== "CapabilityCellManifest" || manifest.version !== 2) {
     throw new CellIdentityVerificationError("manifest must use CapabilityCellManifest version 2");
@@ -64,9 +63,9 @@ export function identifyCellIdentity(source) {
     capability: manifest.capability,
     controller: manifest.controller,
   });
-  const bytes = semanticBytes(value);
+  const { id, bytes } = semanticAddress(value);
   return Object.freeze({
-    id: semanticId(value),
+    id,
     mediaType: "application/rmn+cbor",
     value: decodeSemantic(bytes),
     bytes,
@@ -75,9 +74,9 @@ export function identifyCellIdentity(source) {
 
 export function identifyCellManifest(source) {
   const value = normalizeCellManifest(source);
-  const bytes = semanticBytes(value);
+  const { id, bytes } = semanticAddress(value);
   return Object.freeze({
-    id: semanticId(value),
+    id,
     mediaType: "application/rmn+cbor",
     value: decodeSemantic(bytes),
     bytes,
@@ -110,11 +109,9 @@ async function observeFace(face, claim, observer, cell, manifest, sku, capabilit
       controller,
     })), `${face} observer result`);
   } catch (error) {
-    return invalid(face, claim, "observer-refused", {
-      name: error?.name ?? "Error",
-      message: error?.message ?? String(error),
-    });
+    return invalid(face, claim, "observer-refused", observerRefusalEvidence(error));
   }
+  if (result.evidence !== undefined) assertHistoricalIdentityData(result.evidence, `${face} observer evidence`, CellIdentityVerificationError);
   if (result.cell !== cell || result.controller !== controller) {
     return invalid(face, claim, "identity-mismatch", result.evidence);
   }
@@ -126,14 +123,16 @@ async function observeFace(face, claim, observer, cell, manifest, sku, capabilit
   });
 }
 
-export async function verifyCellIdentity({ manifest, observers = {}, requiredFaces = [] }) {
+export async function verifyCellIdentity(input) {
+  const { manifest, observers = {}, requiredFaces = [] } = object(input, "verification request");
+  assertHistoricalIdentityData(requiredFaces, "requiredFaces", CellIdentityVerificationError);
   if (!Array.isArray(requiredFaces) || requiredFaces.some((face) => typeof face !== "string" || face.length === 0)) {
     throw new CellIdentityVerificationError("requiredFaces must be an array of non-empty face names");
   }
   if (new Set(requiredFaces).size !== requiredFaces.length) {
     throw new CellIdentityVerificationError("requiredFaces must not repeat a face name");
   }
-  object(observers, "observers");
+  assertObserverRecord(observers, "observers", CellIdentityVerificationError);
   const identity = identifyCellIdentity(manifest);
   const manifestRecord = identifyCellManifest(manifest);
   const faces = [];
@@ -142,7 +141,7 @@ export async function verifyCellIdentity({ manifest, observers = {}, requiredFac
     faces.push(await observeFace(
         face,
         claim,
-        observers[face],
+        Object.hasOwn(observers, face) ? observers[face] : undefined,
         identity.id,
         manifestRecord.id,
         identity.value.sku,
@@ -164,9 +163,7 @@ export async function verifyCellIdentity({ manifest, observers = {}, requiredFac
     profileDisposition: missing.length === 0 ? "admitted" : "refused",
     missingRequiredBindings: Object.freeze(missing),
   });
-  return Object.freeze({
-    ...value,
-    id: semanticId(value),
-    bytes: semanticBytes(value),
-  });
+  assertHistoricalIdentityData(value, "verification", CellIdentityVerificationError);
+  const { id, bytes } = semanticAddress(value);
+  return Object.freeze({ ...value, id, bytes });
 }
