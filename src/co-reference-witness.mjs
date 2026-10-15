@@ -1,7 +1,8 @@
 import {
-  semanticBytes,
-  semanticId,
-} from "@red-cup-engineering/relation-model-notation-runtime";
+  semanticAddress,
+} from "@red-cup-engineering/computer-content-address-engineering-services-section/semiotic-content-address";
+
+import { assertHistoricalIdentityData, assertOwnDataRecord, assertDenseDataArray } from "./historical-identity-admission.mjs";
 
 const STANDINGS = new Set([
   "verified",
@@ -20,10 +21,7 @@ export class ActorCoReferenceWitnessError extends Error {
 }
 
 function object(value, label) {
-  if (value === null || typeof value !== "object" || Array.isArray(value)) {
-    throw new ActorCoReferenceWitnessError(`${label} must be an object`);
-  }
-  return value;
+  return assertOwnDataRecord(value, label, ActorCoReferenceWitnessError);
 }
 
 function text(value, label) {
@@ -55,6 +53,12 @@ function evidence(value) {
 function continuity(value) {
   if (value === undefined) return undefined;
   const source = object(value, "continuity");
+  const normalizedKeys = new Set();
+  for (const key of Object.keys(source)) {
+    const normalizedKey = text(key, "continuity key").normalize("NFC");
+    if (normalizedKeys.has(normalizedKey)) throw new ActorCoReferenceWitnessError("continuity keys collide after trimming and NFC normalization");
+    normalizedKeys.add(normalizedKey);
+  }
   return Object.freeze(
     Object.fromEntries(
       Object.keys(source)
@@ -65,6 +69,7 @@ function continuity(value) {
 }
 
 export function normalizeActorCoReferenceWitness(source) {
+  assertHistoricalIdentityData(source, "witness", ActorCoReferenceWitnessError, ["statementRef", "continuity"]);
   const witness = object(source, "witness");
   if (witness.type !== "ActorCoReferenceWitness" || witness.version !== 1) {
     throw new ActorCoReferenceWitnessError("witness must use ActorCoReferenceWitness version 1");
@@ -74,7 +79,7 @@ export function normalizeActorCoReferenceWitness(source) {
     throw new ActorCoReferenceWitnessError("standing must be verified, historical, unresolved, revoked, or conflicting");
   }
   const admittedContinuity = continuity(witness.continuity);
-  return Object.freeze({
+  const normalized = Object.freeze({
     type: "ActorCoReferenceWitness",
     version: 1,
     canonicalActor: text(witness.canonicalActor, "canonicalActor"),
@@ -89,15 +94,18 @@ export function normalizeActorCoReferenceWitness(source) {
       : { statementRef: text(witness.statementRef, "statementRef") }),
     ...(admittedContinuity === undefined ? {} : { continuity: admittedContinuity }),
   });
+  assertHistoricalIdentityData(normalized, "normalized witness", ActorCoReferenceWitnessError);
+  return normalized;
 }
 
 export function identifyActorCoReferenceWitness(source) {
   const value = normalizeActorCoReferenceWitness(source);
+  const { id, bytes } = semanticAddress(value);
   return Object.freeze({
-    id: semanticId(value),
+    id,
     mediaType: "application/rmn+cbor",
     value,
-    bytes: semanticBytes(value),
+    bytes,
   });
 }
 
@@ -109,7 +117,10 @@ function latestStanding(group) {
   return latest[0].witness.standing;
 }
 
-export function deriveActorProtocolFaces({ canonicalActor, witnesses }) {
+export function deriveActorProtocolFaces(input) {
+  const { canonicalActor, witnesses } = object(input, "protocol-face request");
+  assertHistoricalIdentityData(canonicalActor, "canonicalActor", ActorCoReferenceWitnessError);
+  assertDenseDataArray(witnesses, "witnesses", ActorCoReferenceWitnessError);
   const actor = text(canonicalActor, "canonicalActor");
   if (!Array.isArray(witnesses)) {
     throw new ActorCoReferenceWitnessError("witnesses must be an array");
@@ -162,9 +173,7 @@ export function deriveActorProtocolFaces({ canonicalActor, witnesses }) {
     ),
   });
 
-  return Object.freeze({
-    ...value,
-    id: semanticId(value),
-    bytes: semanticBytes(value),
-  });
+  assertHistoricalIdentityData(value, "protocol faces", ActorCoReferenceWitnessError);
+  const { id, bytes } = semanticAddress(value);
+  return Object.freeze({ ...value, id, bytes });
 }

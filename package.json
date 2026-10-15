@@ -24,12 +24,12 @@
     "types/"
   ],
   "scripts": {
-    "check": "node --check src/verify-cell-identity.mjs && node --check src/co-reference-witness.mjs && node --check scripts/verify-cell-identity.mjs && node --check test/verify-cell-identity.test.mjs && node --check test/co-reference-witness.test.mjs",
+    "check": "node --check src/historical-identity-admission.mjs && node --check src/verify-cell-identity.mjs && node --check src/co-reference-witness.mjs && node --check scripts/verify-cell-identity.mjs && node --check test/verify-cell-identity.test.mjs && node --check test/co-reference-witness.test.mjs",
     "test": "node --test test/*.test.mjs",
     "verify": "npm run check && npm test && npm pack --dry-run"
   },
   "dependencies": {
-    "@red-cup-engineering/relation-model-notation-runtime": "workspace:*"
+    "@red-cup-engineering/computer-content-address-engineering-services-section": "workspace:*"
   },
   "engines": {
     "node": ">=22"
