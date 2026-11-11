@@ -29,7 +29,7 @@
     "verify": "npm run check && npm test && npm pack --dry-run"
   },
   "dependencies": {
-    "@red-cup-engineering/computer-content-address-engineering-services-section": "workspace:*"
+    "@red-cup-engineering/computer-content-address-engineering-services-section": "^0.2.3"
   },
   "engines": {
     "node": ">=22"
