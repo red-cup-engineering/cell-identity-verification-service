@@ -11,7 +11,7 @@ This service identifies capability-cell manifests, verifies caller-provided face
 
 ## Content identity ownership
 
-The existing ContentAddress service's `semiotic-content-address` export owns carrier normalization, canonical CBOR and SHA-256 NI composition. This consumer uses `semanticAddress` once per addressed result and `decodeSemantic` for decoded manifest/cell values. It contains no separate canonicalizer, CBOR implementation, hashing implementation or legacy runtime import.
+The existing ContentAddress service's `semiotic-content-address-system` export owns carrier normalization, canonical CBOR and SHA-256 NI composition. This consumer uses `semanticAddress` once per addressed result and `decodeSemantic` for decoded manifest/cell values. It contains no separate canonicalizer, CBOR implementation, hashing implementation or legacy runtime import.
 
 These operations address generic data carriers. Their bytes are not automatically a normalized SEN v3 term envelope or a SignCell. Historical output metadata remains `application/rmn+cbor`; this migration does not relabel it, rewrite stored bytes or assert correspondence for previously lossy inputs.
 

@@ -147,7 +147,7 @@ test('M1-M3 production uses the one canonical provider and retains historical me
   for (const name of ['verify-cell-identity.mjs', 'co-reference-witness.mjs']) {
     const source = readFileSync(new URL(`../src/${name}`, import.meta.url), 'utf8');
     assert.doesNotMatch(source, /relation-model-notation-runtime/);
-    assert.match(source, /computer-content-address-engineering-services-section\/semiotic-content-address/);
+    assert.match(source, /computer-content-address-engineering-services-section\/semiotic-content-address-system/);
     assert.match(source, /semanticAddress/);
     assert.doesNotMatch(source, /semanticBytes|semanticId/);
   }

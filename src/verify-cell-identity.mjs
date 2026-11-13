@@ -1,7 +1,7 @@
 import {
   decodeSemantic,
   semanticAddress,
-} from "@red-cup-engineering/computer-content-address-engineering-services-section/semiotic-content-address";
+} from "@red-cup-engineering/computer-content-address-engineering-services-section/semiotic-content-address-system";
 
 import { assertHistoricalIdentityData, assertOwnDataRecord, assertObserverRecord, observerRefusalEvidence } from "./historical-identity-admission.mjs";
 
