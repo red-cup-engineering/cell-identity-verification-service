@@ -1,0 +1,169 @@
+import {
+  decodeSemantic,
+  semanticAddress,
+} from "@red-cup-engineering/semiotic-content-address-system";
+
+import { assertHistoricalIdentityData, assertOwnDataRecord, assertObserverRecord, observerRefusalEvidence } from "./historical-identity-admission.mjs";
+
+const NI = /^ni:\/\/\/sha-256;[A-Za-z0-9_-]{43}$/u;
+const EVM_DID = /^did:pkh:(eip155:\d+):(0x[0-9a-fA-F]{40})$/u;
+
+export class CellIdentityVerificationError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = "CellIdentityVerificationError";
+    this.code = "CELL_IDENTITY_VERIFICATION_INVALID";
+  }
+}
+
+function object(value, label) {
+  return assertOwnDataRecord(value, label, CellIdentityVerificationError);
+}
+
+export function normalizeCellManifest(source) {
+  assertHistoricalIdentityData(source, "manifest", CellIdentityVerificationError, ["faces"]);
+  const manifest = object(source, "manifest");
+  if (manifest.type !== "CapabilityCellManifest" || manifest.version !== 2) {
+    throw new CellIdentityVerificationError("manifest must use CapabilityCellManifest version 2");
+  }
+  if (typeof manifest.sku !== "string" || !NI.test(manifest.sku)) {
+    throw new CellIdentityVerificationError("manifest sku must be one canonical RMN StockKeepingUnit identity");
+  }
+  if (typeof manifest.capability !== "string" || !NI.test(manifest.capability)) {
+    throw new CellIdentityVerificationError("manifest capability must be one SHA-256 ni URI");
+  }
+  if (typeof manifest.controller !== "string" || !EVM_DID.test(manifest.controller)) {
+    throw new CellIdentityVerificationError("manifest controller must be one did:pkh EVM account");
+  }
+  const faces = object(manifest.faces ?? {}, "manifest faces");
+  const normalizedFaces = Object.fromEntries(
+    Object.keys(faces)
+      .sort()
+      .map((face) => {
+        if (face.length === 0) throw new CellIdentityVerificationError("manifest face names must be non-empty");
+        return [face, object(faces[face], `manifest face ${face}`)];
+      }),
+  );
+  return Object.freeze({
+    type: "CapabilityCellManifest",
+    version: 2,
+    sku: manifest.sku,
+    capability: manifest.capability,
+    controller: manifest.controller,
+    faces: Object.freeze(normalizedFaces),
+  });
+}
+
+export function identifyCellIdentity(source) {
+  const manifest = normalizeCellManifest(source);
+  const value = Object.freeze({
+    type: "CapabilityCellIdentity",
+    version: 1,
+    sku: manifest.sku,
+    capability: manifest.capability,
+    controller: manifest.controller,
+  });
+  const { id, bytes } = semanticAddress(value);
+  return Object.freeze({
+    id,
+    mediaType: "application/cbor",
+    value: decodeSemantic(bytes),
+    bytes,
+  });
+}
+
+export function identifyCellManifest(source) {
+  const value = normalizeCellManifest(source);
+  const { id, bytes } = semanticAddress(value);
+  return Object.freeze({
+    id,
+    mediaType: "application/cbor",
+    value: decodeSemantic(bytes),
+    bytes,
+  });
+}
+
+function invalid(face, claim, reason, evidence = undefined) {
+  return Object.freeze({
+    face,
+    disposition: "invalid",
+    claim,
+    reason,
+    ...(evidence === undefined ? {} : { evidence }),
+  });
+}
+
+async function observeFace(face, claim, observer, cell, manifest, sku, capability, controller) {
+  if (typeof observer !== "function") {
+    return invalid(face, claim, "observer-unavailable");
+  }
+  let result;
+  try {
+    result = object(await observer(Object.freeze({
+      face,
+      claim,
+      cell,
+      manifest,
+      sku,
+      capability,
+      controller,
+    })), `${face} observer result`);
+  } catch (error) {
+    return invalid(face, claim, "observer-refused", observerRefusalEvidence(error));
+  }
+  if (result.evidence !== undefined) assertHistoricalIdentityData(result.evidence, `${face} observer evidence`, CellIdentityVerificationError);
+  if (result.cell !== cell || result.controller !== controller) {
+    return invalid(face, claim, "identity-mismatch", result.evidence);
+  }
+  return Object.freeze({
+    face,
+    disposition: "bound",
+    claim,
+    evidence: result.evidence ?? null,
+  });
+}
+
+export async function verifyCellIdentity(input) {
+  const { manifest, observers = {}, requiredFaces = [] } = object(input, "verification request");
+  assertHistoricalIdentityData(requiredFaces, "requiredFaces", CellIdentityVerificationError);
+  if (!Array.isArray(requiredFaces) || requiredFaces.some((face) => typeof face !== "string" || face.length === 0)) {
+    throw new CellIdentityVerificationError("requiredFaces must be an array of non-empty face names");
+  }
+  if (new Set(requiredFaces).size !== requiredFaces.length) {
+    throw new CellIdentityVerificationError("requiredFaces must not repeat a face name");
+  }
+  assertObserverRecord(observers, "observers", CellIdentityVerificationError);
+  const identity = identifyCellIdentity(manifest);
+  const manifestRecord = identifyCellManifest(manifest);
+  const faces = [];
+  for (const face of Object.keys(manifestRecord.value.faces)) {
+    const claim = manifestRecord.value.faces[face];
+    faces.push(await observeFace(
+        face,
+        claim,
+        Object.hasOwn(observers, face) ? observers[face] : undefined,
+        identity.id,
+        manifestRecord.id,
+        identity.value.sku,
+        identity.value.capability,
+        identity.value.controller,
+      ));
+  }
+  const byFace = Object.fromEntries(faces.map((result) => [result.face, result]));
+  const missing = requiredFaces.filter((face) => byFace[face]?.disposition !== "bound");
+  const value = Object.freeze({
+    type: "CellIdentityVerification",
+    version: 2,
+    cell: identity.id,
+    manifest: manifestRecord.id,
+    sku: identity.value.sku,
+    capability: identity.value.capability,
+    controller: identity.value.controller,
+    faces: Object.freeze(faces),
+    profileDisposition: missing.length === 0 ? "admitted" : "refused",
+    missingRequiredBindings: Object.freeze(missing),
+  });
+  assertHistoricalIdentityData(value, "verification", CellIdentityVerificationError);
+  const { id, bytes } = semanticAddress(value);
+  return Object.freeze({ ...value, id, bytes });
+}

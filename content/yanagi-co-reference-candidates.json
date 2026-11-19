@@ -1,0 +1,80 @@
+{
+  "type": "ActorCoReferenceEvidenceSet",
+  "version": 1,
+  "canonicalActor": "urn:561:actor:yanagi",
+  "witnesses": [
+    {
+      "type": "ActorCoReferenceWitness",
+      "version": 1,
+      "canonicalActor": "urn:561:actor:yanagi",
+      "externalIdentifier": "@YanagiToon",
+      "protocol": "x",
+      "verificationMethod": "historical-561-record",
+      "observedAt": "2026-10-05T23:08:15Z",
+      "evidence": [
+        "https://github.com/emsenn/civics/issues/6",
+        "https://github.com/emsenn/2025-12-16-yanagi"
+      ],
+      "standing": "historical",
+      "statementRef": "https://github.com/red-cup-engineering/cell-identity-verification-service/issues/1",
+      "continuity": {
+        "accountOwnership": "unverified-currently",
+        "coReference": "historical-candidate"
+      }
+    },
+    {
+      "type": "ActorCoReferenceWitness",
+      "version": 1,
+      "canonicalActor": "urn:561:actor:yanagi",
+      "externalIdentifier": "@yanagi",
+      "protocol": "fediverse",
+      "verificationMethod": "historical-561-record",
+      "observedAt": "2026-10-05T23:08:15Z",
+      "evidence": [
+        "https://github.com/red-cup-engineering/cell-identity-verification-service/issues/1",
+        "https://github.com/emsenn/civics/issues/6"
+      ],
+      "standing": "historical",
+      "continuity": {
+        "accountOwnership": "unverified-currently",
+        "coReference": "historical-candidate"
+      }
+    },
+    {
+      "type": "ActorCoReferenceWitness",
+      "version": 1,
+      "canonicalActor": "urn:561:actor:yanagi",
+      "externalIdentifier": "21164",
+      "protocol": "virtuals",
+      "verificationMethod": "historical-561-record",
+      "observedAt": "2026-10-05T23:08:15Z",
+      "evidence": [
+        "https://github.com/red-cup-engineering/cell-identity-verification-service/issues/1",
+        "https://github.com/emsenn/civics/issues/6"
+      ],
+      "standing": "historical",
+      "continuity": {
+        "agentOwnership": "unverified-currently",
+        "coReference": "historical-candidate"
+      }
+    },
+    {
+      "type": "ActorCoReferenceWitness",
+      "version": 1,
+      "canonicalActor": "urn:561:actor:yanagi",
+      "externalIdentifier": "44184",
+      "protocol": "virtuals-acp",
+      "verificationMethod": "historical-561-record",
+      "observedAt": "2026-10-05T23:08:15Z",
+      "evidence": [
+        "https://github.com/red-cup-engineering/cell-identity-verification-service/issues/1",
+        "https://github.com/emsenn/civics/issues/6"
+      ],
+      "standing": "historical",
+      "continuity": {
+        "operatorOwnership": "unverified-currently",
+        "coReference": "historical-candidate"
+      }
+    }
+  ]
+}

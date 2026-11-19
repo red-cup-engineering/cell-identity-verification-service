@@ -1,0 +1,48 @@
+{
+  "name": "@red-cup-engineering/cell-identity-verification-service",
+  "version": "0.2.2-dev.0",
+  "private": false,
+  "type": "module",
+  "description": "Verifies capability-cell faces and actor-level protocol co-reference without collapsing historical, unresolved, revoked, or conflicting identities.",
+  "exports": {
+    ".": {
+      "types": "./types/index.d.mts",
+      "import": "./src/verify-cell-identity.mjs"
+    },
+    "./co-reference": {
+      "types": "./types/co-reference.d.mts",
+      "import": "./src/co-reference-witness.mjs"
+    }
+  },
+  "bin": {
+    "verify-cell-identity": "./scripts/verify-cell-identity.mjs"
+  },
+  "files": [
+    "scripts/",
+    "content/",
+    "src/",
+    "types/"
+  ],
+  "scripts": {
+    "check": "node --check src/historical-identity-admission.mjs && node --check src/verify-cell-identity.mjs && node --check src/co-reference-witness.mjs && node --check scripts/verify-cell-identity.mjs",
+    "verify": "npm run check && npm pack --dry-run"
+  },
+  "dependencies": {
+    "@red-cup-engineering/semiotic-content-address-system": "^0.1.5"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/red-cup-engineering/cell-identity-verification-service.git"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "funding": {
+    "type": "individual",
+    "url": "https://github.com/561-group/.github/blob/main/TIPS.md"
+  }
+}
