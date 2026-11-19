@@ -78,7 +78,7 @@ export function normalizeActorCoReferenceWitness(source) {
   if (!STANDINGS.has(standing)) {
     throw new ActorCoReferenceWitnessError("standing must be verified, historical, unresolved, revoked, or conflicting");
   }
-  const admittedContinuity = continuity(witness.continuity);
+  const validatedContinuity = continuity(witness.continuity);
   const normalized = Object.freeze({
     type: "ActorCoReferenceWitness",
     version: 1,
@@ -92,7 +92,7 @@ export function normalizeActorCoReferenceWitness(source) {
     ...(witness.statementRef === undefined
       ? {}
       : { statementRef: text(witness.statementRef, "statementRef") }),
-    ...(admittedContinuity === undefined ? {} : { continuity: admittedContinuity }),
+    ...(validatedContinuity === undefined ? {} : { continuity: validatedContinuity }),
   });
   assertHistoricalIdentityData(normalized, "normalized witness", ActorCoReferenceWitnessError);
   return normalized;
@@ -167,7 +167,7 @@ export function deriveActorProtocolFaces(input) {
     faces: Object.freeze(faces),
     admittedFaces: Object.freeze(
       faces
-        .filter(({ admitted }) => admitted)
+        .filter(({ admitted: validated }) => validated)
         .map(({ protocol, externalIdentifier, latestWitness }) =>
           Object.freeze({ protocol, externalIdentifier, witness: latestWitness })),
     ),
