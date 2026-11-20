@@ -11,7 +11,7 @@ function refuse(ErrorType, label, reason) {
   throw new ErrorType(`${label} ${reason}`);
 }
 
-function validatedText(value) {
+function admittedText(value) {
   return typeof value === "string" && value.isWellFormed() && !value.startsWith("\uFEFF");
 }
 
@@ -34,7 +34,7 @@ export function assertOwnDataRecord(value, label, ErrorType) {
   const fields = descriptors(value, label, ErrorType, Object.prototype);
   const normalized = new Set();
   for (const key of Object.keys(fields)) {
-    if (!fields[key].enumerable || !validatedText(key) || key === "__proto__") {
+    if (!fields[key].enumerable || !admittedText(key) || key === "__proto__") {
       refuse(ErrorType, label, "has a property outside the historical identity profile");
     }
     const normalizedKey = key.normalize("NFC");
@@ -68,7 +68,7 @@ export function assertHistoricalIdentityData(value, label, ErrorType, optionalUn
     if (item.exit) { ancestors.delete(member); continue; }
     if (member === null || typeof member === "boolean") continue;
     if (typeof member === "string") {
-      if (!validatedText(member)) refuse(ErrorType, item.label, "must be well-formed text without a leading BOM");
+      if (!admittedText(member)) refuse(ErrorType, item.label, "must be well-formed text without a leading BOM");
       continue;
     }
     if (typeof member === "number") {
@@ -119,15 +119,15 @@ function inertErrorText(error, key, fallback) {
   while (current !== null && (typeof current === "object" || typeof current === "function")) {
     if (types.isProxy(current)) return fallback;
     const field = Object.getOwnPropertyDescriptor(current, key);
-    if (field) return "value" in field && validatedText(field.value) ? field.value : fallback;
+    if (field) return "value" in field && admittedText(field.value) ? field.value : fallback;
     current = Object.getPrototypeOf(current);
   }
   return fallback;
 }
 
-export function observerRejectionEvidence(error) {
+export function observerRefusalEvidence(error) {
   const primitive = error === null || !["object", "function"].includes(typeof error);
-  const message = primitive && validatedText(String(error)) ? String(error) : "observer refused";
+  const message = primitive && admittedText(String(error)) ? String(error) : "observer refused";
   return {
     name: inertErrorText(error, "name", "Error"),
     message: inertErrorText(error, "message", message),

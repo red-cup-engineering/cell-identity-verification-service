@@ -3,7 +3,7 @@ import {
   semanticAddress,
 } from "@red-cup-engineering/semiotic-content-address-system";
 
-import { assertHistoricalIdentityData, assertOwnDataRecord, assertObserverRecord, observerRejectionEvidence } from "./historical-identity-admission.mjs";
+import { assertHistoricalIdentityData, assertOwnDataRecord, assertObserverRecord, observerRefusalEvidence } from "./historical-identity-admission.mjs";
 
 const NI = /^ni:\/\/\/sha-256;[A-Za-z0-9_-]{43}$/u;
 const EVM_DID = /^did:pkh:(eip155:\d+):(0x[0-9a-fA-F]{40})$/u;
@@ -109,7 +109,7 @@ async function observeFace(face, claim, observer, cell, manifest, sku, capabilit
       controller,
     })), `${face} observer result`);
   } catch (error) {
-    return invalid(face, claim, "observer-refused", observerRejectionEvidence(error));
+    return invalid(face, claim, "observer-refused", observerRefusalEvidence(error));
   }
   if (result.evidence !== undefined) assertHistoricalIdentityData(result.evidence, `${face} observer evidence`, CellIdentityVerificationError);
   if (result.cell !== cell || result.controller !== controller) {
